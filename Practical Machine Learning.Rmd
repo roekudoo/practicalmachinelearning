@@ -1,0 +1,53 @@
+---
+title: "Practical Machine Learning"
+author: "Roel Stillekens"
+date: "10-11-2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(caret)
+library(randomForest)
+
+rm(list=ls())
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+
+# Read the data
+# https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+# https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+train = read.csv("pml-training.csv")
+test = read.csv("pml-testing.csv")
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# some data preparation to delete columns that have a lot of empty values
+train = train[, -1]
+train = train[, which(colMeans(!is.na(train)) > 0.5)]
+train = train[, colSums(train == "") == 0]
+
+# Do the same data prep for the test data as done on the training data
+test = test[, -1]
+keepcols = names(train)
+test = test[, names(test) %in% keepcols]
+
+# These 2 lines are needed because otherwise the predict function won't work (for some reason)
+test <- rbind(train[1, -59] , test)
+test <- test[-1,]
+
+# Create a random forest model, without cross-validation as this is not needed for Random Forest models
+rfmodel = randomForest(formula = classe ~ .,
+                       data = train,
+                       ntree=250)
+
+# and do the predictions on the test data
+pred = predict(rfmodel, newdata = test)
+print(pred)
+#Accuracy is 100% when comparing results on the Coursera quiz
+
+```
